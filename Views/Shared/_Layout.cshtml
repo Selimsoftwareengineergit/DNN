@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>@ViewData["Title"] - Your Project</title>
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+    <link rel="shortcut icon" type="image/x-icon" href="~/favicon.ico">
+    <link rel="manifest" href="~/assets/img/favicons/manifest.json">
+    <meta name="msapplication-TileImage" content="~/assets/img/favicons/mstile-150x150.png">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stylesheets -->
+    <link href="~/assets/css/theme.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .logo-img {
+            width: 80px;
+            height: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="main" id="top">
+
+        <!-- Top Bar -->
+        <section class="bg-primary py-2 d-none d-sm-block">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-auto d-none d-lg-block">
+                        <p class="my-2 fs--1"><i class="fas fa-map-marker-alt me-3"></i><span>35/3 Shahajalal Housing, Mohammadpur, Dhaka-1207 </span></p>
+                    </div>
+                    <div class="col-auto ms-md-auto order-md-2 d-none d-sm-block">
+                        <ul class="list-unstyled list-inline my-2">
+                            <li class="list-inline-item"><a class="text-decoration-none" href="#!"><i class="fab fa-facebook-f text-900"></i></a></li>
+                            <li class="list-inline-item"><a class="text-decoration-none" href="#!"><i class="fab fa-pinterest text-900"></i></a></li>
+                            <li class="list-inline-item"><a class="text-decoration-none" href="#!"><i class="fab fa-twitter text-900"></i></a></li>
+                            <li class="list-inline-item"><a class="text-decoration-none" href="#!"><i class="fab fa-instagram text-900"> </i></a></li>
+                        </ul>
+                    </div>
+                    <div class="col-auto">
+                        <p class="my-2 fs--1"><i class="fas fa-envelope me-3"></i><a class="text-900" href="mailto:helloworlditacademy@gmail.com">helloworlditacademy@gmail.com </a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navbar - COLLAPSE ON MOBILE ONLY -->
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top py-3 d-block" data-navbar-on-scroll="data-navbar-on-scroll">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" href="#">
+                    <img class="logo-img" src="~/assets/img/gallery/HelloWorld.png" alt="Hello World" />
+                    <span class="ms-2 fw-bold text-dark">Hello World IT Limited</span>
+                </a>
+
+                <!-- Hamburger Menu for Mobile -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Navbar Content - Collapses on Mobile -->
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto pt-2 pt-lg-0 font-base">
+                        <li class="nav-item px-2"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
+                        <li class="nav-item px-2"><a class="nav-link" aria-current="page" href="#">Pricing</a></li>
+                        <li class="nav-item px-2"><a class="nav-link" aria-current="page" href="#">Web Development</a></li>
+                        <li class="nav-item px-2"><a class="nav-link" aria-current="page" href="#">User Research</a></li>
+                    </ul>
+
+                    <a class="btn btn-primary order-1 order-lg-0 ms-3" href="#!">Sign Up</a>
+
+                    <!-- Mobile Search Form -->
+                    <form class="d-flex my-3 d-block d-lg-none">
+                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" />
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                    </form>
+
+                    <!-- Desktop Search Dropdown -->
+                    <div class="dropdown d-none d-lg-block ms-2">
+                        <button class="btn btn-outline-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-search text-800"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px; padding: 10px;">
+                            <li>
+                                <form class="d-flex">
+                                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" />
+                                    <button class="btn btn-primary" type="submit">Go</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        @RenderBody()
+
+        <!-- Footer -->
+        <section class="bg-secondary">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-sm-12 col-lg-6 mb-4 order-0 order-sm-0">
+                        <a class="navbar-brand d-flex align-items-center" href="#" style="text-decoration: none;">
+                            <img src="~/assets/img/gallery/HelloWorld.png" alt="Hello World"
+                                 style="width: 50px; height: auto; vertical-align: middle;">
+                            <span style="margin-left: 10px; font-weight: 600; color: white; font-size: 18px;">Hello World IT Limited</span>
+                        </a>
+
+                        <p class="text-light my-4"> <i class="fas fa-map-marker-alt me-3"></i><span class="text-light">35/2 Shahajalal Housing  &nbsp;</span><a class="text-light" href="tel:+604-680-9785">+880 1930192991</a><br />Mohammadpur, Dhaka-1207</p>
+                        <p class="text-light"> <i class="fas fa-envelope me-3"> </i><a class="text-light" href="mailto:helloworlditacademy@gmail.com">helloworlditacademy@gmail.com </a></p>
+                        <p class="text-light"> <i class="fas fa-phone-alt me-3"></i><a class="text-light" href="tel:1-800-800-2299">+880 01930192991 (Support)</a></p>
+                    </div>
+                    <!-- Community, Informations, More sections -->
+                    <div class="col-6 col-sm-4 col-lg-2 mb-3 order-2 order-sm-1">
+                        <h5 class="lh-lg fw-bold mb-4 text-light font-sans-serif">Community </h5>
+                        <ul class="list-unstyled mb-md-4 mb-lg-0">
+                            <li class="lh-lg"><a class="text-200" href="#!">Learners</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Partners</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Developers</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Beta Testers</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Translators</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Blog</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Tech Blog</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Teaching Center</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 mb-3 order-3 order-sm-2">
+                        <h5 class="lh-lg fw-bold text-light mb-4 font-sans-serif">Informations</h5>
+                        <ul class="list-unstyled mb-md-4 mb-lg-0">
+                            <li class="lh-lg"><a class="text-200" href="#!">About</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Pricing</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Blog</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Careers</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6 col-sm-4 col-lg-2 mb-3 order-3 order-sm-2">
+                        <h5 class="lh-lg fw-bold text-light mb-4 font-sans-serif"> More</h5>
+                        <ul class="list-unstyled mb-md-4 mb-lg-0">
+                            <li class="lh-lg"><a class="text-200" href="#!">Press</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Investors</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Terms</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Privacy</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Help</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Accessibility</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Contact</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Articles</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Directory</a></li>
+                            <li class="lh-lg"><a class="text-200" href="#!">Affiliates</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Bottom -->
+        <section class="py-0" style="margin-top: -5.8rem;">
+            <div class="container bg-primary">
+                <div class="row justify-content-md-between justify-content-evenly py-4">
+                    <div class="col-12 col-sm-8 col-md-6 col-lg-auto text-center text-md-start">
+                        <p class="fs--1 my-2 fw-bold">All rights Reserved &copy; Hello World It Limited, 2025</p>
+                    </div>
+                    <div class="col-12 col-sm-8 col-md-6">
+                        <p class="fs--1 my-2 text-center text-md-end">
+                            Made with&nbsp;
+                            <svg class="bi bi-suit-heart-fill" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#EB6453" viewBox="0 0 16 16">
+                                <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1z"></path>
+                            </svg>&nbsp;by&nbsp;<a class="fw-bold text-900" href="https://themewagon.com/" target="_blank">Selim Shaikh </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Your existing scripts -->
+    <script src="@Url.Content("~/vendors/is/is.min.js")"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
+    <script src="@Url.Content("~/assets/js/theme.js")"></script>
+</body>
+</html>
