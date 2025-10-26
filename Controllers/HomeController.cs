@@ -1,4 +1,5 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Drawing.Printing;
 using System.Security.Cryptography;
 using System.Text;
 using DNN.Data;
@@ -6,13 +7,14 @@ using DNN.Models;
 using DNN.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace DNN.Controllers
 {
     public class HomeController : Controller
     {
         private readonly DNNDbContext _context;
-
+        private const int PageSize = 10;
         public HomeController(DNNDbContext context)
         {
             _context = context;
@@ -61,7 +63,7 @@ namespace DNN.Controllers
                     PasswordHash = passwordHash,
                     FullName = model.FullName,
                     Email = model.Email,
-                    MobileNumber = model.MobileNumber, 
+                    MobileNumber = model.MobileNumber,
                     RoleId = model.RoleId,
                     CreatedDate = DateTime.Now,
                     IsActive = true
@@ -79,6 +81,157 @@ namespace DNN.Controllers
             return View(model);
         }
 
+        public async Task<IActionResult> ManageUsers(int page = 1, string query = "")
+        {
+            if (page < 1) page = 1;
+
+            // ✅ Step 1: Start with all users (materialize the query first)
+            IQueryable<User> usersQuery = _context.Users
+                .Include(u => u.Role)
+                .AsNoTracking();
+
+            // ✅ Step 2: Apply search filter
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                string searchText = query.Trim().ToLower();
+
+                usersQuery = usersQuery.Where(u =>
+                    u.Username.ToLower().Contains(searchText) ||
+                    u.FullName.ToLower().Contains(searchText) ||
+                    u.Email.ToLower().Contains(searchText) ||
+                    u.MobileNumber.ToLower().Contains(searchText) ||
+                    (u.Role != null && u.Role.RoleName.ToLower().Contains(searchText))
+                );
+            }
+
+            // ✅ Step 3: Materialize the query to List first to avoid async issues
+            var filteredUsers = usersQuery
+                .OrderByDescending(u => u.CreatedDate)
+                .ToList();
+
+            // ✅ Step 4: Get Total Count (synchronous)
+            int totalCount = filteredUsers.Count;
+
+            // ✅ Step 5: Calculate Pagination
+            int totalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
+            if (totalPages == 0) totalPages = 1;
+            if (page > totalPages) page = totalPages;
+
+            // ✅ Step 6: Fetch Paginated Data (synchronous)
+            var users = filteredUsers
+                .Skip((page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(u => new UserListItemViewModel
+                {
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    MobileNumber = u.MobileNumber,
+                    RoleName = u.Role != null ? u.Role.RoleName : "",
+                    IsActive = u.IsActive,
+                    CreatedDate = u.CreatedDate
+                })
+                .ToList();
+
+            // ✅ Step 7: Prepare ViewModel
+            var vm = new ManageUsersViewModel
+            {
+                Users = users,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                Query = query
+            };
+
+            // ✅ Step 8: Return the View (keep method async but use Task.FromResult)
+            return await Task.FromResult(View(vm));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(string query = "", int page = 1)
+        {
+            var usersQuery = _context.Users
+                .Include(u => u.Role)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var q = query.Trim();
+                usersQuery = usersQuery.Where(u =>
+                    u.Username.Contains(q) ||
+                    u.FullName.Contains(q) ||
+                    u.Email.Contains(q) ||
+                    u.MobileNumber.Contains(q) ||
+                    (u.Role != null && u.Role.RoleName.Contains(q))
+                );
+            }
+
+            var totalCount = await usersQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
+
+            var users = await usersQuery
+                .OrderByDescending(u => u.CreatedDate)
+                .Skip((page - 1) * PageSize)
+                .Take(PageSize)
+                .Select(u => new UserListItemViewModel
+                {
+                    UserId = u.UserId,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    MobileNumber = u.MobileNumber,
+                    RoleName = u.Role != null ? u.Role.RoleName : "",
+                    IsActive = u.IsActive,
+                    CreatedDate = u.CreatedDate
+                })
+                .ToListAsync();
+
+            return Json(new
+            {
+                users,
+                pagination = new
+                {
+                    currentPage = page,
+                    totalPages
+                }
+            });
+        }
+
+        // POST: /Admin/Deactivate/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Deactivate(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            user.IsActive = false;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        // GET: /Admin/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null) return NotFound();
+
+            // Map to an EditViewModel (you implement form fields as needed)
+            var model = new EditUserViewModel
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                MobileNumber = user.MobileNumber,
+                RoleId = user.RoleId,
+                IsActive = user.IsActive
+            };
+
+            ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+            return View(model); // Create/Edit view separately
+        }
 
         private string HashPassword(string password)
         {

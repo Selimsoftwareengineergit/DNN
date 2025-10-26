@@ -1,0 +1,321 @@
+﻿@model DNN.Models.ViewModels.ManageUsersViewModel
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<!-- Use the site styling from _Layout -->
+<div class="container py-5">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-6">
+            <h2 class="fw-bold">Manage Users</h2>
+            <p class="text-muted mb-0">List, search and manage registered users.</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <a class="btn btn-primary" asp-controller="Admin" asp-action="Create">Create New User</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Search -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <input id="searchInput" class="form-control" placeholder="Search by username, name, email, mobile or role..." value="@Model.Query" />
+                </div>
+                <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <small class="text-muted">Showing page <span id="currentPage">@Model.CurrentPage</span> of <span id="totalPages">@Model.TotalPages</span></small>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="usersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTbody">
+                        @foreach (var u in Model.Users)
+                        {
+                            <tr>
+                                <td>@u.UserId</td>
+                                <td>@u.Username</td>
+                                <td>@u.FullName</td>
+                                <td>@u.Email</td>
+                                <td>@u.MobileNumber</td>
+                                <td>@u.RoleName</td>
+                                <td>@u.CreatedDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Admin" asp-action="Edit" asp-route-id="@u.UserId">Edit</a>
+                                    @if (u.IsActive)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="User pages">
+                <ul class="pagination justify-content-center" id="paginationUl">
+                    @{
+                        // render initial pagination server-side
+                        var current = Model.CurrentPage;
+                        var total = Model.TotalPages;
+                        var start = Math.Max(1, current - 2);
+                        var end = Math.Min(total, current + 2);
+                    }
+                    @if (Model.TotalPages > 1)
+                    {
+                        if (current > 1)
+                        {
+                            <li class="page-item"><a class="page-link page-link-num" href="#" data-page="@(current - 1)">Previous</a></li>
+                        }
+                        for (int i = start; i <= end; i++)
+                        {
+                            var cls = i == current ? "page-item active" : "page-item";
+                            <li class="@cls"><a class="page-link page-link-num" href="#" data-page="@i">@i</a></li>
+                        }
+                        if (current < total)
+                        {
+                            <li class="page-item"><a class="page-link page-link-num" href="#" data-page="@(current + 1)">Next</a></li>
+                        }
+                    }
+                    }
+            </nav>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const pageSize = 10; // must match server
+            let debounceTimer = null;
+            let currentPage = @Model.CurrentPage;
+            const totalPagesElem = document.getElementById('totalPages');
+            const currentPageElem = document.getElementById('currentPage');
+
+            const searchInput = document.getElementById('searchInput');
+            const usersTbody = document.getElementById('usersTbody');
+            const paginationUl = document.getElementById('paginationUl');
+
+            // Debounce helper
+            function debounce(fn, delay) {
+                return function () {
+                    const args = arguments;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            async function fetchUsers(query = '', page = 1) {
+                const url = '@Url.Action("GetUsers", "Admin")' + `?query=${encodeURIComponent(query)}&page=${page}`;
+                try {
+                    const res = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!res.ok) {
+                        console.error('Failed to fetch users', res.status);
+                        return;
+                    }
+                    const data = await res.json();
+                    renderUsers(data.users || []);
+                    renderPagination(data.pagination.currentPage, data.pagination.totalPages);
+                } catch (err) {
+                    console.error('Error fetching users', err);
+                }
+            }
+
+            function renderUsers(users) {
+                usersTbody.innerHTML = '';
+                if (!users || users.length === 0) {
+                    usersTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">No users found.</td></tr>`;
+                    return;
+                }
+
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+
+                    tr.innerHTML = `
+                        <td>${u.userId}</td>
+                        <td>${escapeHtml(u.username)}</td>
+                        <td>${escapeHtml(u.fullName)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${escapeHtml(u.mobileNumber)}</td>
+                        <td>${escapeHtml(u.roleName)}</td>
+                        <td>${formatDate(u.createdDate)}</td>
+                        <td>${u.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary me-1" href="/Admin/Edit/${u.userId}">Edit</a>
+                            ${u.isActive ? `<button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="${u.userId}">Deactivate</button>` : `<button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>`}
+                        </td>
+                    `;
+                    usersTbody.appendChild(tr);
+                });
+
+                // attach deactivate handlers after rendering
+                attachDeactivateHandlers();
+            }
+
+            function renderPagination(current, total) {
+                currentPage = current;
+                currentPageElem.textContent = current;
+                totalPagesElem.textContent = total;
+
+                const maxPagesToShow = 5;
+                let start = Math.max(1, current - 2);
+                let end = Math.min(total, start + maxPagesToShow - 1);
+                if (end - start < maxPagesToShow - 1) {
+                    start = Math.max(1, end - maxPagesToShow + 1);
+                }
+
+                paginationUl.innerHTML = '';
+                if (total <= 1) return;
+
+                // Previous
+                if (current > 1) {
+                    const li = makePageItem('Previous', current - 1);
+                    paginationUl.appendChild(li);
+                }
+
+                for (let i = start; i <= end; i++) {
+                    const li = document.createElement('li');
+                    li.className = 'page-item' + (i === current ? ' active' : '');
+                    const a = document.createElement('a');
+                    a.className = 'page-link page-link-num';
+                    a.href = '#';
+                    a.dataset.page = i;
+                    a.textContent = i;
+                    a.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        fetchUsers(searchInput.value.trim(), parseInt(this.dataset.page));
+                    });
+                    li.appendChild(a);
+                    paginationUl.appendChild(li);
+                }
+
+                // Next
+                if (current < total) {
+                    const li = makePageItem('Next', current + 1);
+                    paginationUl.appendChild(li);
+                }
+            }
+
+            function makePageItem(text, page) {
+                const li = document.createElement('li');
+                li.className = 'page-item';
+                const a = document.createElement('a');
+                a.className = 'page-link page-link-num';
+                a.href = '#';
+                a.dataset.page = page;
+                a.textContent = text;
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    fetchUsers(searchInput.value.trim(), parseInt(this.dataset.page));
+                });
+                li.appendChild(a);
+                return li;
+            }
+
+            function attachDeactivateHandlers() {
+                const buttons = document.querySelectorAll('.btn-deactivate');
+                buttons.forEach(btn => {
+                    btn.removeEventListener('click', onDeactivateClick);
+                    btn.addEventListener('click', onDeactivateClick);
+                });
+            }
+
+            async function onDeactivateClick(e) {
+                const btn = e.currentTarget;
+                const id = btn.dataset.userid;
+                if (!confirm('Are you sure you want to deactivate this user?')) return;
+
+                try {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    const res = await fetch('@Url.Action("Deactivate", "Admin")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token || ''
+                        },
+                        body: JSON.stringify({ id: parseInt(id) })
+                    });
+                    if (!res.ok) {
+                        alert('Failed to deactivate user');
+                        return;
+                    }
+                    const data = await res.json();
+                    if (data.success) {
+                        // refresh the current page with current query
+                        fetchUsers(searchInput.value.trim(), currentPage);
+                    } else {
+                        alert('Could not deactivate user.');
+                    }
+                } catch (ex) {
+                    console.error(ex);
+                    alert('Error deactivating user.');
+                }
+            }
+
+            // helpers
+            function escapeHtml(s) {
+                if (!s) return '';
+                return s.replaceAll('&', '&amp;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('>', '&gt;')
+                        .replaceAll('"', '&quot;')
+                        .replaceAll("'", '&#39;');
+            }
+
+            function formatDate(d) {
+                if (!d) return '';
+                const dt = new Date(d);
+                return dt.toISOString().slice(0, 10);
+            }
+
+            // init: attach debounce search
+            const doSearch = debounce(function () {
+                fetchUsers(searchInput.value.trim(), 1);
+            }, 300);
+
+            searchInput.addEventListener('input', doSearch);
+
+            // Ensure deactivate buttons on the initial static server-render are attached
+            attachDeactivateHandlers();
+
+            // If you want to fetch fresh initial data via AJAX (optionally), uncomment:
+            // fetchUsers(searchInput.value.trim(), @Model.CurrentPage);
+
+        })();
+    </script>
+}
