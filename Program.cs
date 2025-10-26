@@ -1,7 +1,12 @@
+using DNN.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext<DNNDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DNNDbConnection")));
 
 var app = builder.Build();
 
