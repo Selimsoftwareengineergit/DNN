@@ -1,7 +1,6 @@
-﻿using DNN.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace DNN.Controllers
+namespace DNN.Models
 {
     public class Role
     {

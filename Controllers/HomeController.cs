@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Drawing.Printing;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using DNN.Data;
 using DNN.Models;
@@ -8,6 +6,7 @@ using DNN.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace DNN.Controllers
 {
@@ -197,6 +196,57 @@ namespace DNN.Controllers
             });
         }
 
+
+        // GET: /Admin/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null) return NotFound();
+
+            var model = new EditUserViewModel
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                MobileNumber = user.MobileNumber,
+                RoleId = user.RoleId,
+                IsActive = user.IsActive
+            };
+
+            ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+            return View(model); // Create/Edit view separately
+        }
+
+        // POST: /Admin/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(EditUserViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+                return View(model);
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+            if (user == null) return NotFound();
+
+            // Update fields
+            user.Username = model.Username;
+            user.FullName = model.FullName;
+            user.Email = model.Email;
+            user.MobileNumber = model.MobileNumber;
+            user.RoleId = model.RoleId;
+            user.IsActive = model.IsActive;
+
+            await _context.SaveChangesAsync();
+
+            // Redirect to ManageUsers page
+            return RedirectToAction("ManageUsers");
+        }
+
+
         // POST: /Admin/Deactivate/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -211,26 +261,57 @@ namespace DNN.Controllers
             return Json(new { success = true });
         }
 
-        // GET: /Admin/Edit/5
-        public async Task<IActionResult> Edit(int id)
+        [HttpGet]
+        public IActionResult Login()
         {
-            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
-            if (user == null) return NotFound();
+            return View();
+        }
 
-            // Map to an EditViewModel (you implement form fields as needed)
-            var model = new EditUserViewModel
+        [HttpPost]
+        public async Task<IActionResult> Login(string username, string password)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                UserId = user.UserId,
-                Username = user.Username,
-                FullName = user.FullName,
-                Email = user.Email,
-                MobileNumber = user.MobileNumber,
-                RoleId = user.RoleId,
-                IsActive = user.IsActive
-            };
+                ViewBag.Error = "Please enter both username and password.";
+                return View();
+            }
 
-            ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
-            return View(model); // Create/Edit view separately
+            // ✅ Hash the entered password before comparing
+            string hashedPassword = HashPassword(password);
+
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == hashedPassword);
+
+            if (user == null)
+            {
+                ViewBag.Error = "Invalid username or password.";
+                return View();
+            }
+
+            if (!user.IsActive)
+            {
+                ViewBag.Error = "Your account is deactivated.";
+                return View();
+            }
+
+            // ✅ Store data in session
+            HttpContext.Session.SetInt32("UserId", user.UserId);
+            HttpContext.Session.SetString("Username", user.Username);
+            HttpContext.Session.SetString("UserRole", user.Role?.RoleName ?? "User");
+
+            // ✅ Redirect based on role
+            if (user.Role?.RoleName == "Admin")
+                return RedirectToAction("ManageUsers", "Home");
+            else
+                return RedirectToAction("Index", "Dashboard");
+        }
+
+        // GET: /Home/Logout
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
         }
 
         private string HashPassword(string password)

@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var userRole = HttpContextAccessor.HttpContext?.Session.GetString("UserRole");
+}
+
+<!DOCTYPE html>
 <html lang="en-US" dir="ltr">
 <head>
     <meta charset="utf-8" />
@@ -80,30 +87,24 @@
                             <a class="nav-link" asp-controller="Home" asp-action="WebDevelopment">Web Development</a>
                         </li>
 
-                        <!-- User Registration Dropdown -->
-                        <li class="nav-item dropdown px-2">
-                            <a class="nav-link dropdown-toggle" href="#" id="userRegDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                User Registration
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userRegDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="Register">
-                                        Add New User
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="ManageUsers">
-                                        Manage Users
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        <!-- ✅ Show only if Admin -->
+                        @if (userRole == "Admin")
+                        {
+                            <li class="nav-item dropdown px-2">
+                                <a class="nav-link dropdown-toggle" href="#" id="userRegDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    User Registration
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userRegDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="Register">Add New User</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="ManageUsers">Manage Users</a></li>
+                                </ul>
+                            </li>
+                        }
 
                         <!-- Optional: Sign Up Button -->
                         <li class="nav-item px-2">
-                            <a class="btn btn-primary ms-3" href="#">Sign Up</a>
+                            <a class="dropdown-item" asp-controller="Home" asp-action="Login">Sign Up</a>
                         </li>
-
                     </ul>
                 </div>
 

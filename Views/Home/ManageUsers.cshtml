@@ -65,14 +65,16 @@
                                     }
                                 </td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Admin" asp-action="Edit" asp-route-id="@u.UserId">Edit</a>
+                                    <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Home" asp-action="Edit" asp-route-id="@u.UserId">Edit</a>
                                     @if (u.IsActive)
                                     {
-                                        <button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
+
                                     }
                                     else
                                     {
-                                        <button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
+
                                     }
                                 </td>
                             </tr>
@@ -107,16 +109,17 @@
                             <li class="page-item"><a class="page-link page-link-num" href="#" data-page="@(current + 1)">Next</a></li>
                         }
                     }
-                    }
+                    
             </nav>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    @Html.AntiForgeryToken()
     <script>
         (function () {
-            const pageSize = 10; // must match server
+            const pageSize = 10; 
             let debounceTimer = null;
             let currentPage = @Model.CurrentPage;
             const totalPagesElem = document.getElementById('totalPages');
@@ -140,9 +143,7 @@
                 try {
                     const res = await fetch(url, {
                         method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        headers: { 'Accept': 'application/json' }
                     });
                     if (!res.ok) {
                         console.error('Failed to fetch users', res.status);
@@ -165,7 +166,6 @@
 
                 users.forEach(u => {
                     const tr = document.createElement('tr');
-
                     tr.innerHTML = `
                         <td>${u.userId}</td>
                         <td>${escapeHtml(u.username)}</td>
@@ -176,14 +176,13 @@
                         <td>${formatDate(u.createdDate)}</td>
                         <td>${u.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary me-1" href="/Admin/Edit/${u.userId}">Edit</a>
+                            <a class="btn btn-sm btn-outline-primary me-1" href="/Home/Edit/${u.userId}">Edit</a>
                             ${u.isActive ? `<button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="${u.userId}">Deactivate</button>` : `<button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>`}
                         </td>
                     `;
                     usersTbody.appendChild(tr);
                 });
 
-                // attach deactivate handlers after rendering
                 attachDeactivateHandlers();
             }
 
@@ -202,11 +201,7 @@
                 paginationUl.innerHTML = '';
                 if (total <= 1) return;
 
-                // Previous
-                if (current > 1) {
-                    const li = makePageItem('Previous', current - 1);
-                    paginationUl.appendChild(li);
-                }
+                if (current > 1) paginationUl.appendChild(makePageItem('Previous', current - 1));
 
                 for (let i = start; i <= end; i++) {
                     const li = document.createElement('li');
@@ -224,11 +219,7 @@
                     paginationUl.appendChild(li);
                 }
 
-                // Next
-                if (current < total) {
-                    const li = makePageItem('Next', current + 1);
-                    paginationUl.appendChild(li);
-                }
+                if (current < total) paginationUl.appendChild(makePageItem('Next', current + 1));
             }
 
             function makePageItem(text, page) {
@@ -247,39 +238,40 @@
                 return li;
             }
 
-            function attachDeactivateHandlers() {
-                const buttons = document.querySelectorAll('.btn-deactivate');
-                buttons.forEach(btn => {
-                    btn.removeEventListener('click', onDeactivateClick);
-                    btn.addEventListener('click', onDeactivateClick);
-                });
-            }
+             document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('btn-deactivate')) {
+                    onDeactivateClick(e);
+                }
+            });
 
             async function onDeactivateClick(e) {
-                const btn = e.currentTarget;
+                e.preventDefault();
+                const btn = e.target;
                 const id = btn.dataset.userid;
+
                 if (!confirm('Are you sure you want to deactivate this user?')) return;
 
                 try {
-                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
                     const res = await fetch('@Url.Action("Deactivate", "Admin")', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': token || ''
+                            'RequestVerificationToken': token,
+                            'Content-Type': 'application/x-www-form-urlencoded'
                         },
-                        body: JSON.stringify({ id: parseInt(id) })
+                        body: `id=${id}`
                     });
-                    if (!res.ok) {
-                        alert('Failed to deactivate user');
-                        return;
-                    }
-                    const data = await res.json();
-                    if (data.success) {
-                        // refresh the current page with current query
-                        fetchUsers(searchInput.value.trim(), currentPage);
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            fetchUsers(searchInput.value.trim(), currentPage);
+                        } else {
+                            alert('Could not deactivate user.');
+                        }
                     } else {
-                        alert('Could not deactivate user.');
+                        alert('Failed to deactivate user. Status: ' + res.status);
                     }
                 } catch (ex) {
                     console.error(ex);
@@ -287,7 +279,6 @@
                 }
             }
 
-            // helpers
             function escapeHtml(s) {
                 if (!s) return '';
                 return s.replaceAll('&', '&amp;')
@@ -303,18 +294,13 @@
                 return dt.toISOString().slice(0, 10);
             }
 
-            // init: attach debounce search
             const doSearch = debounce(function () {
                 fetchUsers(searchInput.value.trim(), 1);
             }, 300);
 
             searchInput.addEventListener('input', doSearch);
 
-            // Ensure deactivate buttons on the initial static server-render are attached
             attachDeactivateHandlers();
-
-            // If you want to fetch fresh initial data via AJAX (optionally), uncomment:
-            // fetchUsers(searchInput.value.trim(), @Model.CurrentPage);
 
         })();
     </script>
