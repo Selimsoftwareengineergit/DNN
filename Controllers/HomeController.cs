@@ -3,8 +3,11 @@ using System.Text;
 using DNN.Data;
 using DNN.Models;
 using DNN.Models.ViewModels;
+using DNN.Services;
+using DNN.Services.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -14,9 +17,13 @@ namespace DNN.Controllers
     {
         private readonly DNNDbContext _context;
         private const int PageSize = 10;
-        public HomeController(DNNDbContext context)
+        private readonly IHubContext<StudentRequestHub> _hub;
+        private readonly EmailService _emailService;
+        public HomeController(DNNDbContext context, IHubContext<StudentRequestHub> hub, EmailService emailService)
         {
             _context = context;
+            _hub = hub;
+            _emailService = emailService;
         }
 
         public IActionResult Index()
@@ -38,7 +45,7 @@ namespace DNN.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Register(RegistrationViewModel model)
+        public async Task<IActionResult> Register(RegistrationViewModel model, IFormFile? ProfileImage)
         {
             // Populate Roles for dropdown if validation fails
             ViewBag.Roles = _context.Roles.ToList();
@@ -55,7 +62,7 @@ namespace DNN.Controllers
                 // Hash password
                 var passwordHash = HashPassword(model.Password);
 
-                // Create new User object
+                // Initialize user
                 var user = new User
                 {
                     Username = model.UserName,
@@ -68,16 +75,60 @@ namespace DNN.Controllers
                     IsActive = true
                 };
 
+                // ✅ Handle Profile Image Upload
+                if (ProfileImage != null && ProfileImage.Length > 0)
+                {
+                    // Ensure folder exists
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    // Generate unique file name
+                    var uniqueFileName = $"{Guid.NewGuid()}_{ProfileImage.FileName}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    // Save file
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ProfileImage.CopyToAsync(fileStream);
+                    }
+
+                    // Store relative path in database
+                    user.ProfileImagePath = $"/uploads/profiles/{uniqueFileName}";
+                }
+
                 // Add and save to database
                 _context.Users.Add(user);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
-                // Optionally redirect to login page or confirmation page
+                // Redirect to login page or confirmation page
                 return RedirectToAction("Index", "Home");
             }
 
             // If we reach here, something failed
             return View(model);
+        }
+
+
+        // GET: /Admin/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null) return NotFound();
+
+            var model = new EditUserViewModel
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                MobileNumber = user.MobileNumber,
+                RoleId = user.RoleId,
+                IsActive = user.IsActive
+            };
+
+            ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+            return View(model); // Create/Edit view separately
         }
 
         public async Task<IActionResult> ManageUsers(int page = 1, string query = "")
@@ -196,28 +247,6 @@ namespace DNN.Controllers
             });
         }
 
-
-        // GET: /Admin/Edit/5
-        public async Task<IActionResult> Edit(int id)
-        {
-            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
-            if (user == null) return NotFound();
-
-            var model = new EditUserViewModel
-            {
-                UserId = user.UserId,
-                Username = user.Username,
-                FullName = user.FullName,
-                Email = user.Email,
-                MobileNumber = user.MobileNumber,
-                RoleId = user.RoleId,
-                IsActive = user.IsActive
-            };
-
-            ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
-            return View(model); // Create/Edit view separately
-        }
-
         // POST: /Admin/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -245,7 +274,6 @@ namespace DNN.Controllers
             // Redirect to ManageUsers page
             return RedirectToAction("ManageUsers");
         }
-
 
         // POST: /Admin/Deactivate/5
         [HttpPost]
@@ -312,6 +340,103 @@ namespace DNN.Controllers
         {
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                ViewBag.Error = "Please enter your username.";
+                return View();
+            }
+
+            // Check if the user exists
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null)
+            {
+                ViewBag.Error = "Username not found.";
+                return View();
+            }
+
+            // Create a new request
+            var request = new StudentPasswordRequest
+            {
+                Username = username,
+                RequestType = "Reset Password",
+                Status = "Pending",
+                RequestDate = DateTime.Now
+            };
+
+            _context.StudentPasswordRequests.Add(request);
+            await _context.SaveChangesAsync();
+
+            ViewBag.Message = "Your password reset request has been submitted. Admin will handle it soon.";
+            return View();
+        }
+
+        public async Task<IActionResult> StudentPasswordRequests()
+        {
+            var requests = await _context.StudentPasswordRequests
+                .OrderByDescending(r => r.RequestDate)
+                .ToListAsync();
+
+            return View(requests);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> HandlePasswordRequest(int id, string actionType)
+        {
+            var request = await _context.StudentPasswordRequests.FindAsync(id);
+            if (request == null)
+                return NotFound();
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+            if (user == null)
+                return NotFound();
+
+            if (actionType == "ResetPassword")
+            {
+                // Generate new password and hash it
+                var newPassword = GenerateRandomPassword();
+                user.PasswordHash = HashPassword(newPassword);
+
+                request.NewPassword = newPassword;
+                request.Status = "Completed";
+                request.CompletedDate = DateTime.Now;
+
+                // ✅ Send email via EmailService
+                await _emailService.SendResetPasswordEmailAsync(user, newPassword);
+            }
+            else if (actionType == "KnowOldPassword")
+            {
+                request.Status = "Completed";
+                request.CompletedDate = DateTime.Now;
+
+                // ✅ Send "old password not recoverable" email via EmailService
+                await _emailService.SendPasswordNotRecoverableEmailAsync(user);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // ✅ Notify all connected admins via SignalR
+            await _hub.Clients.All.SendAsync("ReceiveRequestUpdate", $"Request for {request.Username} has been handled.");
+
+            return RedirectToAction(nameof(StudentPasswordRequests));
+        }
+
+        private string GenerateRandomPassword(int length = 8)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         private string HashPassword(string password)

@@ -97,13 +97,16 @@
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userRegDropdown">
                                     <li><a class="dropdown-item" asp-controller="Home" asp-action="Register">Add New User</a></li>
                                     <li><a class="dropdown-item" asp-controller="Home" asp-action="ManageUsers">Manage Users</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="StudentPasswordRequests">Student Password Requests</a></li>
                                 </ul>
                             </li>
                         }
 
                         <!-- Optional: Sign Up Button -->
                         <li class="nav-item px-2">
-                            <a class="dropdown-item" asp-controller="Home" asp-action="Login">Sign Up</a>
+                            <a class="btn btn-outline-primary btn-sm rounded-pill px-3 py-2" asp-controller="Home" asp-action="Login">
+                                Sign In
+                            </a>
                         </li>
                     </ul>
                 </div>

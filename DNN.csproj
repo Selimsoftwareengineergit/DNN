@@ -9,9 +9,11 @@
   <ItemGroup>
     <Folder Include="wwwroot\assets\img\icons\" />
     <Folder Include="wwwroot\assets\img\illustrations\" />
+    <Folder Include="wwwroot\images\profiles\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10">

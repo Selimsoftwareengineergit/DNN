@@ -1,8 +1,10 @@
 ﻿using DNN.Controllers;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace DNN.Models
 {
+    [Index(nameof(Username), IsUnique = true)]
     public class User
     {
         [Key]
@@ -12,7 +14,7 @@ namespace DNN.Models
         public string Username { get; set; }
 
         [Required, StringLength(256)]
-        public string PasswordHash { get; set; } // We'll store hashed password
+        public string PasswordHash { get; set; }
 
         [Required, StringLength(100)]
         public string FullName { get; set; }
@@ -32,5 +34,8 @@ namespace DNN.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsActive { get; set; } = true;
+
+        [StringLength(200)]
+        public string ProfileImagePath { get; set; }
     }
 }

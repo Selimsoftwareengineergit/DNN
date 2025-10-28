@@ -14,7 +14,7 @@
                         <p class="fs--1">Fill in the details below to register</p>
                     </div>
                     <div class="card-body">
-                        <form asp-action="Register" method="post">
+                        <form asp-action="Register" method="post" enctype="multipart/form-data">
                             <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                             <div class="mb-3">
@@ -59,6 +59,13 @@
                                     <option value="">-- Select Role --</option>
                                 </select>
                                 <span asp-validation-for="RoleId" class="text-danger"></span>
+                            </div>
+
+                            <!-- ✅ Profile Image Upload -->
+                            <div class="mb-3">
+                                <label for="ProfileImage" class="form-label">Profile Image</label>
+                                <input type="file" id="ProfileImage" name="ProfileImage" class="form-control" />
+                                <small class="text-muted">Optional. Max size: 2MB.</small>
                             </div>
 
                             <div class="d-grid gap-2">

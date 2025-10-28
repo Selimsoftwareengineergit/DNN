@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DNN.Models;
 using DNN.Controllers;
+using Microsoft.AspNetCore.Identity.Data;
 
 namespace DNN.Data
 {
@@ -10,7 +11,7 @@ namespace DNN.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
-
+        public DbSet<StudentPasswordRequest> StudentPasswordRequests { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

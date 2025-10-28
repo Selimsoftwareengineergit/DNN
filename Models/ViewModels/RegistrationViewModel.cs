@@ -27,10 +27,14 @@ namespace DNN.Models.ViewModels
         [Required, Phone]
         [StringLength(20)]
         [Display(Name = "Mobile Number")]
-        public string MobileNumber { get; set; } 
+        public string MobileNumber { get; set; }
 
         [Required]
         [Display(Name = "Role")]
         public int RoleId { get; set; }
+
+        // ✅ Add this for profile image upload
+        [Display(Name = "Profile Image")]
+        public IFormFile? ProfileImage { get; set; }
     }
 }
