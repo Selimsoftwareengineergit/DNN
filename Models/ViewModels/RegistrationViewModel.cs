@@ -33,7 +33,6 @@ namespace DNN.Models.ViewModels
         [Display(Name = "Role")]
         public int RoleId { get; set; }
 
-        // ✅ Add this for profile image upload
         [Display(Name = "Profile Image")]
         public IFormFile? ProfileImage { get; set; }
     }
