@@ -78,13 +78,26 @@ namespace DNN.Controllers
                 // ✅ Handle Profile Image Upload
                 if (ProfileImage != null && ProfileImage.Length > 0)
                 {
+                    // Allowed image extensions
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+                    // Get extension
+                    var fileExtension = Path.GetExtension(ProfileImage.FileName).ToLowerInvariant();
+
+                    // Validate format
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        ModelState.AddModelError("", "Invalid image format! Please upload JPG, JPEG, PNG, GIF, BMP, or WEBP files only.");
+                        return View(model);
+                    }
+
                     // Ensure folder exists
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
 
                     // Generate unique file name
-                    var uniqueFileName = $"{Guid.NewGuid()}_{ProfileImage.FileName}";
+                    var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                     // Save file
