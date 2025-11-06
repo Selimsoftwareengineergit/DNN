@@ -1,0 +1,144 @@
+﻿@model DNN.Models.ViewModels.EditUserViewModel
+
+@{
+    ViewData["Title"] = "Edit User";
+    var defaultImagePath = "/images/profiles/default-avatar.jpg"; 
+    var currentImagePath = string.IsNullOrWhiteSpace(Model.CurrentProfileImagePath)
+                           ? defaultImagePath
+                           : Model.CurrentProfileImagePath;
+}
+
+<section class="pt-6 bg-600">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="mb-0">Edit User</h3>
+                        <p class="fs--1">Update user details below</p>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="EditUser" method="post" enctype="multipart/form-data">
+                            <input type="hidden" asp-for="UserId" />
+                            <input type="hidden" asp-for="CurrentProfileImagePath" />
+
+                            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label"></label>
+                                <input asp-for="Username" class="form-control" readonly />
+                                <span asp-validation-for="Username" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label"></label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label"></label>
+                                <input asp-for="Email" class="form-control" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="MobileNumber" class="form-label"></label>
+                                <input asp-for="MobileNumber" class="form-control" />
+                                <span asp-validation-for="MobileNumber" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="RoleId" class="form-label"></label>
+                                <select asp-for="RoleId" asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))" class="form-select">
+                                    <option value="">-- Select Role --</option>
+                                </select>
+                                <span asp-validation-for="RoleId" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label">Active</label>
+                            </div>
+
+                            <div class="mb-3 border rounded p-3 bg-light">
+                                <label class="form-label fw-bold mb-3">Profile Image Management</label>
+                                <div class="d-flex align-items-center mb-2">
+                                    <img id="imagePreview"
+                                         src="@currentImagePath"
+                                         alt="Profile Avatar"
+                                         class="rounded-circle me-3 border shadow-sm"
+                                         style="width: 70px; height: 70px; object-fit: cover; aspect-ratio: 1/1;"
+                                         onerror="this.onerror=null; this.src='@defaultImagePath';" />
+                                    <div>
+                                        <label asp-for="NewProfileImage" class="form-label small text-muted mb-1"></label>
+                                        <input asp-for="NewProfileImage" class="form-control form-control-sm" type="file" accept="image/*" />
+                                        <span asp-validation-for="NewProfileImage" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.CurrentProfileImagePath))
+                                {
+                                    <div class="form-check mt-2">
+                                        <input asp-for="DeleteExistingImage" class="form-check-input" type="checkbox" id="deleteImageCheck" />
+                                        <label asp-for="DeleteExistingImage" class="form-check-label text-danger small">Remove current profile image</label>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">Update User</button>
+                                <a asp-controller="Admin" asp-action="ManageUsers" class="btn btn-outline-secondary btn-lg">Back to User List</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const fileInput = document.getElementById('@Html.IdFor(m => m.NewProfileImage)');
+            const imagePreview = document.getElementById('imagePreview');
+            const defaultImagePath = '@defaultImagePath';
+            const currentImagePath = '@currentImagePath'; 
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function (event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            imagePreview.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+
+                        const deleteCheck = document.getElementById('deleteImageCheck');
+                        if (deleteCheck) {
+                            deleteCheck.checked = false;
+                        }
+
+                    } else {
+                        imagePreview.src = currentImagePath;
+                    }
+                });
+            }
+
+            const deleteCheck = document.getElementById('deleteImageCheck');
+            if (deleteCheck) {
+                deleteCheck.addEventListener('change', function() {
+                    if (this.checked) {
+                        fileInput.value = '';
+                        imagePreview.src = defaultImagePath;
+                    } else {
+                        imagePreview.src = currentImagePath;
+                    }
+                });
+            }
+        })();
+    </script>
+}

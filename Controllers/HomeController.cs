@@ -16,12 +16,14 @@ namespace DNN.Controllers
     public class HomeController : Controller
     {
         private readonly DNNDbContext _context;
+        private readonly IWebHostEnvironment _env;
         private const int PageSize = 10;
         private readonly IHubContext<StudentRequestHub> _hub;
         private readonly EmailService _emailService;
-        public HomeController(DNNDbContext context, IHubContext<StudentRequestHub> hub, EmailService emailService)
+        public HomeController(DNNDbContext context, IHubContext<StudentRequestHub> hub, EmailService emailService, IWebHostEnvironment env)
         {
             _context = context;
+             _env = env;
             _hub = hub;
             _emailService = emailService;
         }
@@ -112,7 +114,7 @@ namespace DNN.Controllers
 
 
         // GET: /Admin/Edit/5
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> EditUser(int id)
         {
             var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
             if (user == null) return NotFound();
@@ -125,12 +127,111 @@ namespace DNN.Controllers
                 Email = user.Email,
                 MobileNumber = user.MobileNumber,
                 RoleId = user.RoleId,
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+                CurrentProfileImagePath = user.ProfileImagePath
             };
 
+
             ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
-            return View(model); // Create/Edit view separately
+            return View(model); 
         }
+
+        // POST: /Admin/EditUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(EditUserViewModel model)
+        {
+           
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+                return View(model);
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            user.FullName = model.FullName;
+            user.Email = model.Email;
+            user.MobileNumber = model.MobileNumber;
+            user.RoleId = model.RoleId;
+            user.IsActive = model.IsActive;
+            string? oldImagePath = user.ProfileImagePath;
+           
+
+            if (model.DeleteExistingImage)
+            {
+                DeleteProfileImage(oldImagePath);
+                user.ProfileImagePath = null;
+            }
+            else if (model.NewProfileImage != null && model.NewProfileImage.Length > 0)
+            {
+                var newImagePath = await SaveProfileImageAsync(model.NewProfileImage, user.Username);
+
+                if (newImagePath == null)
+                {
+                    ModelState.AddModelError("NewProfileImage", "Invalid image format. Please upload JPG, JPEG, PNG, GIF, BMP, or WEBP.");
+                    ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
+                    return View(model);
+                }
+
+                DeleteProfileImage(oldImagePath);
+                user.ProfileImagePath = newImagePath;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("ManageUsers");
+        }
+
+        private void DeleteProfileImage(string? relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath)) return;
+
+            if (relativePath.StartsWith("/"))
+            {
+                relativePath = relativePath.Substring(1);
+            }
+
+            var filePath = Path.Combine(_env.WebRootPath, relativePath);
+
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+        }
+
+        private async Task<string?> SaveProfileImageAsync(IFormFile file, string identifier)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return null;
+            }
+
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "profiles");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            // Using GUID + extension for unique file name
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            return $"/uploads/profiles/{uniqueFileName}";
+        }
+
+
 
         public async Task<IActionResult> ManageUsers(int page = 1, string query = "")
         {
@@ -247,34 +348,6 @@ namespace DNN.Controllers
                     totalPages
                 }
             });
-        }
-
-        // POST: /Admin/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(EditUserViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                ViewBag.Roles = await _context.Roles.OrderBy(r => r.RoleName).ToListAsync();
-                return View(model);
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
-            if (user == null) return NotFound();
-
-            // Update fields
-            user.Username = model.Username;
-            user.FullName = model.FullName;
-            user.Email = model.Email;
-            user.MobileNumber = model.MobileNumber;
-            user.RoleId = model.RoleId;
-            user.IsActive = model.IsActive;
-
-            await _context.SaveChangesAsync();
-
-            // Redirect to ManageUsers page
-            return RedirectToAction("ManageUsers");
         }
 
         // POST: /Admin/Deactivate/5

@@ -75,7 +75,7 @@
                                     }
                                 </td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Home" asp-action="Edit" asp-route-id="@u.UserId">Edit</a>
+                                    <a class="btn btn-sm btn-outline-primary me-1" asp-controller="Home" asp-action="EditUser" asp-route-id="@u.UserId">Edit</a>
                                     @if (u.IsActive)
                                     {
                                         <button type="button" class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>

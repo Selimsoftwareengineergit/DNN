@@ -36,6 +36,6 @@ namespace DNN.Models
         public bool IsActive { get; set; } = true;
 
         [StringLength(200)]
-        public string ProfileImagePath { get; set; }
+        public string? ProfileImagePath { get; set; }
     }
 }

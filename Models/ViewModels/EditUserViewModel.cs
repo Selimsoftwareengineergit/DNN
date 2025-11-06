@@ -9,5 +9,8 @@
         public string MobileNumber { get; set; }
         public int RoleId { get; set; }
         public bool IsActive { get; set; }
+        public string? CurrentProfileImagePath { get; set; }
+        public IFormFile? NewProfileImage { get; set; }     
+        public bool DeleteExistingImage { get; set; }      
     }
 }
