@@ -46,6 +46,7 @@ namespace DNN.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegistrationViewModel model, IFormFile? ProfileImage)
+        
         {
             // Populate Roles for dropdown if validation fails
             ViewBag.Roles = _context.Roles.ToList();
@@ -78,47 +79,34 @@ namespace DNN.Controllers
                 // ✅ Handle Profile Image Upload
                 if (ProfileImage != null && ProfileImage.Length > 0)
                 {
-                    // Allowed image extensions
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-
-                    // Get extension
                     var fileExtension = Path.GetExtension(ProfileImage.FileName).ToLowerInvariant();
-
-                    // Validate format
                     if (!allowedExtensions.Contains(fileExtension))
                     {
                         ModelState.AddModelError("", "Invalid image format! Please upload JPG, JPEG, PNG, GIF, BMP, or WEBP files only.");
                         return View(model);
                     }
 
-                    // Ensure folder exists
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles");
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
 
-                    // Generate unique file name
                     var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
                     var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                    // Save file
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
                         await ProfileImage.CopyToAsync(fileStream);
                     }
 
-                    // Store relative path in database
                     user.ProfileImagePath = $"/uploads/profiles/{uniqueFileName}";
                 }
 
-                // Add and save to database
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Redirect to login page or confirmation page
                 return RedirectToAction("Index", "Home");
             }
-
-            // If we reach here, something failed
             return View(model);
         }
 
@@ -193,7 +181,8 @@ namespace DNN.Controllers
                     MobileNumber = u.MobileNumber,
                     RoleName = u.Role != null ? u.Role.RoleName : "",
                     IsActive = u.IsActive,
-                    CreatedDate = u.CreatedDate
+                    CreatedDate = u.CreatedDate,
+                    ProfileImagePath = u.ProfileImagePath
                 })
                 .ToList();
 

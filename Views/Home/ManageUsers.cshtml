@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card shadow-sm">
         <div class="card-body">
             <!-- Search -->
             <div class="row mb-3">
@@ -38,6 +38,7 @@
                             <th>Email</th>
                             <th>Mobile</th>
                             <th>Role</th>
+                            <th>Image</th>
                             <th>Created</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
@@ -46,6 +47,7 @@
                     <tbody id="usersTbody">
                         @foreach (var u in Model.Users)
                         {
+                            var imagePath = string.IsNullOrWhiteSpace(u.ProfileImagePath) ? "/images/profiles/default-avatar.jpg" : u.ProfileImagePath;
                             <tr>
                                 <td>@u.UserId</td>
                                 <td>@u.Username</td>
@@ -53,7 +55,15 @@
                                 <td>@u.Email</td>
                                 <td>@u.MobileNumber</td>
                                 <td>@u.RoleName</td>
-                                <td>@u.CreatedDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <img src="@imagePath"
+                                         alt="@u.Username Profile"
+                                         class="rounded-circle border"
+                                         style="width: 35px; height: 35px; object-fit: cover; aspect-ratio: 1/1;"
+                                         onerror="this.onerror=null; this.src='/images/profiles/default-avatar.jpg';" />
+                                </td>
+
+                                <td>@u.CreatedDate.ToString("d MMMM, yyyy")</td>
                                 <td>
                                     @if (u.IsActive)
                                     {
@@ -69,12 +79,10 @@
                                     @if (u.IsActive)
                                     {
                                         <button type="button" class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
-
                                     }
                                     else
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="@u.UserId">Deactivate</button>
-
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>
                                     }
                                 </td>
                             </tr>
@@ -87,11 +95,14 @@
             <nav aria-label="User pages">
                 <ul class="pagination justify-content-center" id="paginationUl">
                     @{
-                        // render initial pagination server-side
                         var current = Model.CurrentPage;
                         var total = Model.TotalPages;
                         var start = Math.Max(1, current - 2);
                         var end = Math.Min(total, current + 2);
+
+                        // Recalculate start/end for better centering
+                        if (end - start < 4) { start = Math.Max(1, total - 4); }
+                        if (start > current) { start = current; end = Math.Min(total, current + 4); }
                     }
                     @if (Model.TotalPages > 1)
                     {
@@ -109,7 +120,7 @@
                             <li class="page-item"><a class="page-link page-link-num" href="#" data-page="@(current + 1)">Next</a></li>
                         }
                     }
-                    
+                </ul>
             </nav>
         </div>
     </div>
@@ -119,7 +130,7 @@
     @Html.AntiForgeryToken()
     <script>
         (function () {
-            const pageSize = 10; 
+            const pageSize = 10;
             let debounceTimer = null;
             let currentPage = @Model.CurrentPage;
             const totalPagesElem = document.getElementById('totalPages');
@@ -160,12 +171,28 @@
             function renderUsers(users) {
                 usersTbody.innerHTML = '';
                 if (!users || users.length === 0) {
-                    usersTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">No users found.</td></tr>`;
+                    // This colspan must match the number of columns (10)
+                    usersTbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No users found.</td></tr>`;
                     return;
                 }
 
                 users.forEach(u => {
                     const tr = document.createElement('tr');
+
+                    // Image Path and Style Setup
+                    const imagePath = u.profileImagePath && u.profileImagePath.length > 0
+                                      ? u.profileImagePath
+                                      : '/images/profiles/default-avatar.jpg';
+
+                    const statusBadge = u.isActive
+                        ? '<span class="badge bg-success">Active</span>'
+                        : '<span class="badge bg-secondary">Inactive</span>';
+
+                    const actionButton = u.isActive
+                        ? `<button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="${u.userId}">Deactivate</button>`
+                        : `<button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>`;
+
+                    // The inner HTML template string now reflects the 10 columns accurately
                     tr.innerHTML = `
                         <td>${u.userId}</td>
                         <td>${escapeHtml(u.username)}</td>
@@ -173,17 +200,23 @@
                         <td>${escapeHtml(u.email)}</td>
                         <td>${escapeHtml(u.mobileNumber)}</td>
                         <td>${escapeHtml(u.roleName)}</td>
+
+                        <td> // Image Cell (7th column)
+                            <img src="${imagePath}" alt="${escapeHtml(u.username)} Profile"
+                                 class="rounded-circle border"
+                                 style="width: 35px; height: 35px; object-fit: cover; aspect-ratio: 1/1;"
+                                 onerror="this.onerror=null; this.src='/images/profiles/default-avatar.jpg';" />
+                        </td>
+
                         <td>${formatDate(u.createdDate)}</td>
-                        <td>${u.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
+                        <td>${statusBadge}</td>
                         <td class="text-end">
                             <a class="btn btn-sm btn-outline-primary me-1" href="/Home/Edit/${u.userId}">Edit</a>
-                            ${u.isActive ? `<button class="btn btn-sm btn-outline-danger btn-deactivate" data-userid="${u.userId}">Deactivate</button>` : `<button class="btn btn-sm btn-outline-secondary" disabled>Deactivated</button>`}
+                            ${actionButton}
                         </td>
                     `;
                     usersTbody.appendChild(tr);
                 });
-
-                attachDeactivateHandlers();
             }
 
             function renderPagination(current, total) {
@@ -194,9 +227,12 @@
                 const maxPagesToShow = 5;
                 let start = Math.max(1, current - 2);
                 let end = Math.min(total, start + maxPagesToShow - 1);
+
+                // Adjust start if we're near the beginning
                 if (end - start < maxPagesToShow - 1) {
                     start = Math.max(1, end - maxPagesToShow + 1);
                 }
+
 
                 paginationUl.innerHTML = '';
                 if (total <= 1) return;
@@ -238,18 +274,29 @@
                 return li;
             }
 
-             document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('btn-deactivate')) {
-                    onDeactivateClick(e);
+            // Global click listener for Deactivate buttons
+            document.addEventListener('click', function(e) {
+                // Ensure we click the button, not a parent element
+                let target = e.target;
+                while (target && !target.classList.contains('btn-deactivate')) {
+                    target = target.parentElement;
+                }
+
+                if (target && target.classList.contains('btn-deactivate')) {
+                    onDeactivateClick(e, target);
                 }
             });
 
-            async function onDeactivateClick(e) {
+            async function onDeactivateClick(e, btn) {
                 e.preventDefault();
-                const btn = e.target;
                 const id = btn.dataset.userid;
 
-                if (!confirm('Are you sure you want to deactivate this user?')) return;
+                // IMPORTANT: Using a custom modal is highly recommended over 'confirm' for professional apps
+                if (!window.confirm('Are you sure you want to deactivate this user? This action can be reversed.')) return;
+
+                // Disable button during operation
+                btn.disabled = true;
+                btn.textContent = 'Processing...';
 
                 try {
                     const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
@@ -266,32 +313,47 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.success) {
+                            // Refresh the current page to reflect the status change
                             fetchUsers(searchInput.value.trim(), currentPage);
                         } else {
-                            alert('Could not deactivate user.');
+                            console.error('Deactivation failed:', data.message || 'Unknown error.');
+                            window.alert('Could not deactivate user: ' + (data.message || 'Check console for details.'));
                         }
                     } else {
-                        alert('Failed to deactivate user. Status: ' + res.status);
+                        window.alert('Failed to deactivate user. Server Status: ' + res.status);
                     }
                 } catch (ex) {
-                    console.error(ex);
-                    alert('Error deactivating user.');
+                    console.error('Error deactivating user.', ex);
+                    window.alert('Error deactivating user. Please try again.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Deactivate';
                 }
             }
 
+            // Utility functions
             function escapeHtml(s) {
                 if (!s) return '';
                 return s.replaceAll('&', '&amp;')
-                        .replaceAll('<', '&lt;')
-                        .replaceAll('>', '&gt;')
-                        .replaceAll('"', '&quot;')
-                        .replaceAll("'", '&#39;');
+                         .replaceAll('<', '&lt;')
+                         .replaceAll('>', '&gt;')
+                         .replaceAll('"', '&quot;')
+                         .replaceAll("'", '&#39;');
             }
 
             function formatDate(d) {
                 if (!d) return '';
                 const dt = new Date(d);
-                return dt.toISOString().slice(0, 10);
+
+                if (isNaN(dt.getTime())) {
+                    return 'Invalid Date';
+                }
+
+                return dt.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
             }
 
             const doSearch = debounce(function () {
@@ -300,7 +362,13 @@
 
             searchInput.addEventListener('input', doSearch);
 
-            attachDeactivateHandlers();
+            // Initial pagination links (server-side rendered) need handlers
+            document.querySelectorAll('.page-link-num').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    fetchUsers(searchInput.value.trim(), parseInt(this.dataset.page));
+                });
+            });
 
         })();
     </script>

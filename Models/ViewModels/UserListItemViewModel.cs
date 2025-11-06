@@ -10,5 +10,6 @@
         public string RoleName { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
+        public string? ProfileImagePath { get; set; }
     }
 }

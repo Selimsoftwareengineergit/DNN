@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="wwwroot\assets\img\icons\" />
     <Folder Include="wwwroot\assets\img\illustrations\" />
-    <Folder Include="wwwroot\images\profiles\" />
   </ItemGroup>
 
   <ItemGroup>
