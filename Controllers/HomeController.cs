@@ -112,7 +112,6 @@ namespace DNN.Controllers
             return View(model);
         }
 
-
         // GET: /Admin/Edit/5
         public async Task<IActionResult> EditUser(int id)
         {
@@ -230,8 +229,6 @@ namespace DNN.Controllers
 
             return $"/uploads/profiles/{uniqueFileName}";
         }
-
-
 
         public async Task<IActionResult> ManageUsers(int page = 1, string query = "")
         {
@@ -372,6 +369,7 @@ namespace DNN.Controllers
 
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
+        
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
@@ -398,16 +396,19 @@ namespace DNN.Controllers
                 return View();
             }
 
-            // ✅ Store data in session
+            // Store data in session
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("UserRole", user.Role?.RoleName ?? "User");
+            HttpContext.Session.SetString("UserFullName", user.FullName);
+            HttpContext.Session.SetString("ProfileImagePath", user.ProfileImagePath ?? string.Empty);
 
-            // ✅ Redirect based on role
+            // Redirect based on role
+
             if (user.Role?.RoleName == "Admin")
-                return RedirectToAction("ManageUsers", "Home");
+                return RedirectToAction("ManageUsers", "Home"); 
             else
-                return RedirectToAction("Index", "Dashboard");
+                return RedirectToAction("Index", "Students", new { id = user.UserId });
         }
 
         // GET: /Home/Logout

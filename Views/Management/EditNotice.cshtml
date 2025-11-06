@@ -1,0 +1,76 @@
+﻿@model DNN.Models.Notice
+@{
+    ViewData["Title"] = "Edit Notice";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">@ViewData["Title"]</h2>
+            <p class="text-muted mb-0">Update the details of an existing notice below.</p>
+        </div>
+
+        <!-- Back Button -->
+        <a asp-controller="Management" asp-action="Notice" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+            <i class="fa-solid fa-arrow-left me-2"></i>Go Back
+        </a>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-5">
+            <form asp-action="EditNotice" asp-controller="Management" method="post">
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row g-4">
+                    <!-- Subject -->
+                    <div class="col-md-12">
+                        <label asp-for="Subject" class="form-label fw-semibold">Notice Subject <span class="text-danger">*</span></label>
+                        <input asp-for="Subject" class="form-control form-control-lg rounded-pill" placeholder="Enter notice subject" />
+                        <span asp-validation-for="Subject" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                        <textarea asp-for="Description" class="form-control rounded-4" rows="5" placeholder="Write the notice details here..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Entry Date -->
+                    <div class="col-md-6">
+                        <label asp-for="EntryDate" class="form-label fw-semibold">Entry Date</label>
+                        <input asp-for="EntryDate" type="datetime-local" class="form-control rounded-pill" />
+                    </div>
+
+                    <!-- Expire Date -->
+                    <div class="col-md-6">
+                        <label asp-for="ExpireDate" class="form-label fw-semibold">Expire Date</label>
+                        <input asp-for="ExpireDate" type="datetime-local" class="form-control rounded-pill" />
+                    </div>
+
+                    <!-- Active Toggle -->
+                    <div class="col-md-6 mt-2">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch">
+                            <label class="form-check-label fw-semibold" for="isActiveSwitch">Active</label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 text-end mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5">
+                            <i class="fa-solid fa-save me-2"></i>Update Notice
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

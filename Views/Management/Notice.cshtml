@@ -1,0 +1,88 @@
+﻿@model IEnumerable<DNN.Models.Notice>
+@{
+    ViewData["Title"] = "Notice Board";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">@ViewData["Title"]</h1>
+        <a asp-controller="Management" asp-action="CreateNotice" class="btn btn-primary rounded-pill px-4 py-2">
+            <i class="fa-solid fa-plus-circle me-2"></i>Create New Notice
+        </a>
+    </div>
+
+    <!-- Success/Error Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Notice Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Subject</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Entry Date</th>
+                        <th scope="col">Expire Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        int count = 1;
+                        foreach (var notice in Model)
+                        {
+                            <tr>
+                                <th scope="row">@count</th>
+                                <td>@notice.Subject</td>
+                                <td>@notice.Description</td>
+                                <td>@notice.EntryDate.ToString("dd MMM yyyy, HH:mm")</td>
+                                <td>@(notice.ExpireDate.HasValue ? notice.ExpireDate.Value.ToString("dd MMM yyyy, HH:mm") : "-")</td>
+                                <td>
+                                    @if (notice.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a asp-controller="Management" asp-action="EditNotice" asp-route-id="@notice.Id" class="btn btn-sm btn-outline-primary rounded-pill me-1">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i>Edit
+                                    </a>
+                                </td>
+                            </tr>
+                            count++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No notices found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
