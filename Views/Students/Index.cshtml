@@ -33,6 +33,7 @@
     <meta name="msapplication-TileImage" content="~/assets/img/favicons/mstile-150x150.png">
     <meta name="theme-color" content="#ffffff">
 
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Font Awesome -->
@@ -46,23 +47,64 @@
             width: 80px;
             height: 80px;
         }
+
         .profile-avatar {
             object-fit: cover;
             aspect-ratio: 1/1;
         }
+
         .dashboard-tile {
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        .dashboard-tile:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }
+
+            .dashboard-tile:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            }
+
         .page-content-wrapper {
-            min-height: calc(100vh - 400px); 
+            min-height: calc(100vh - 400px);
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
+
+        .notice-ticker {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 0;
+            margin: 20px 0 40px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ticker-container {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker-scroll 30s linear infinite;
+        }
+
+        @@keyframes ticker-scroll {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .notice-item {
+            margin-right: 30px;
+        }
+
+        .notice-separator {
+            margin: 0 15px;
+            color: #ffd700;
+        }
+
     </style>
 </head>
 <body>
@@ -103,7 +145,6 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto pt-2 pt-lg-0 font-base align-items-center">
 
-                        @* ⭐ Authenticated User Profile Display and Actions ⭐ *@
                         <li class="nav-item d-flex align-items-center me-3">
                             <img src="@Url.Content(displayImagePath)" alt="@userFullName Profile"
                                  class="rounded-circle me-2 profile-avatar border border-primary"
@@ -111,7 +152,8 @@
                                  onerror="this.onerror=null; this.src='@Url.Content(defaultImagePath)';" />
 
                             <div>
-                                <span class="d-block fw-bold text-primary fs-2" style="font-size: 0.5rem;">@userFullName</span>
+                                <span class="d-block fw-bold text-primary" style="font-size: 1.2rem;">@userFullName</span>
+
                                 <small class="d-block fw-semibold" style="font-size: 1rem; color: #6c63ff;">@userRole</small>
                             </div>
 
@@ -151,6 +193,34 @@
                     Welcome, <span class="fw-semibold text-primary">@userFullName</span>!
                     Quick access to your academic records and essential tools.
                 </p>
+
+                <div class="notice-ticker">
+                    <div class="ticker-container">
+                        @if (ViewBag.ActiveNotices != null && ((List<DNN.Models.Notice>)ViewBag.ActiveNotices).Count > 0)
+                        {
+                            foreach (var notice in (List<DNN.Models.Notice>)ViewBag.ActiveNotices)
+                            {
+                                <span class="notice-item">
+                                    📢 @notice.Subject
+                                    <span class="notice-separator">•</span>
+                                </span>
+                            }
+                            <!-- Repeat the content for seamless loop -->
+                            @foreach (var notice in (List<DNN.Models.Notice>)ViewBag.ActiveNotices)
+                            {
+                                <span class="notice-item">
+                                    📢 @notice.Subject
+                                    <span class="notice-separator">•</span>
+                                </span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="notice-item">No active notices at the moment.</span>
+                        }
+                    </div>
+                </div>
+
 
                 <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4 justify-content-center">
                     <div class="col">
@@ -270,3 +340,4 @@
 
 </body>
 </html>
+
