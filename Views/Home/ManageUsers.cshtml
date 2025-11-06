@@ -291,10 +291,8 @@
                 e.preventDefault();
                 const id = btn.dataset.userid;
 
-                // IMPORTANT: Using a custom modal is highly recommended over 'confirm' for professional apps
                 if (!window.confirm('Are you sure you want to deactivate this user? This action can be reversed.')) return;
 
-                // Disable button during operation
                 btn.disabled = true;
                 btn.textContent = 'Processing...';
 
@@ -313,7 +311,6 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.success) {
-                            // Refresh the current page to reflect the status change
                             fetchUsers(searchInput.value.trim(), currentPage);
                         } else {
                             console.error('Deactivation failed:', data.message || 'Unknown error.');
