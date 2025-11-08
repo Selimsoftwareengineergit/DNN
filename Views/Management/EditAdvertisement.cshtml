@@ -1,0 +1,158 @@
+﻿@model DNN.Models.Banner
+
+@{
+    ViewData["Title"] = "Edit Advertisement";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-pen-to-square me-2"></i>@ViewData["Title"]
+        </h1>
+        <a asp-controller="Management" asp-action="Advertisement"
+           class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+            <i class="fa-solid fa-list me-2"></i>Go to List
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form asp-action="EditAdvertisement" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row g-4">
+                    <!-- Company Name -->
+                    <div class="col-md-6">
+                        <label asp-for="CompanyName" class="form-label fw-semibold">Company Name</label>
+                        <input asp-for="CompanyName" class="form-control form-control-lg rounded-3" required />
+                        <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="col-md-6">
+                        <label asp-for="Title" class="form-label fw-semibold">Advertisement Title</label>
+                        <input asp-for="Title" class="form-control form-control-lg rounded-3" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Current Image + Upload New -->
+                    <div class="col-md-6">
+                        <label asp-for="ImagePath" class="form-label fw-semibold">Banner Image</label>
+                        <div class="mb-3 text-center">
+                            @if (!string.IsNullOrEmpty(Model.ImagePath))
+                            {
+                                <img src="@Model.ImagePath" alt="Current Banner" class="img-fluid rounded shadow-sm mb-3" style="max-height: 250px;" />
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic">No image uploaded</p>
+                            }
+                        </div>
+                        <input type="file" name="ImageFile" class="form-control form-control-lg rounded-3" accept="image/*" id="ImageUpload" />
+                        <small class="text-muted d-block mt-1">Upload new image (JPG, PNG, GIF – max 2MB)</small>
+
+                        <!-- Preview New Image -->
+                        <div class="mt-3 text-center">
+                            <img id="PreviewImage" src="#" alt="Preview" class="img-fluid rounded shadow-sm d-none" style="max-height: 250px;" />
+                        </div>
+                    </div>
+
+                    <!-- Click URL -->
+                    <div class="col-md-6">
+                        <label asp-for="ClickUrl" class="form-label fw-semibold">Click URL</label>
+                        <input asp-for="ClickUrl" class="form-control form-control-lg rounded-3" placeholder="https://example.com" />
+                        <span asp-validation-for="ClickUrl" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Banner Type -->
+                    <div class="col-md-6">
+                        <label asp-for="BannerType" class="form-label fw-semibold">Banner Type</label>
+                        <select asp-for="BannerType" class="form-select form-select-lg rounded-3">
+                            @foreach (var type in Enum.GetValues(typeof(DNN.Models.Enum.BannerTypeEnum)))
+                            {
+                                <option value="@type" selected="@(type.Equals(Model.BannerType) ? "selected" : null)">@type</option>
+                            }
+                        </select>
+                        <span asp-validation-for="BannerType" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Target -->
+                    <div class="col-md-6">
+                        <label asp-for="Target" class="form-label fw-semibold">Target</label>
+                        <select asp-for="Target" class="form-select form-select-lg rounded-3">
+                            <option value="_blank" selected="@("_blank" == Model.Target)">Open in New Tab</option>
+                            <option value="_self" selected="@("_self" == Model.Target)">Open in Same Tab</option>
+                        </select>
+                        <span asp-validation-for="Target" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="col-md-6">
+                        <label asp-for="StartDate" class="form-label fw-semibold">Start Date</label>
+                        <input asp-for="StartDate" type="date" class="form-control form-control-lg rounded-3" />
+                        <span asp-validation-for="StartDate" class="text-danger small"></span>
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="col-md-6">
+                        <label asp-for="EndDate" class="form-label fw-semibold">End Date</label>
+                        <input asp-for="EndDate" type="date" class="form-control form-control-lg rounded-3" />
+                        <span asp-validation-for="EndDate" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="col-md-6">
+                        <label asp-for="Priority" class="form-label fw-semibold">Priority</label>
+                        <input asp-for="Priority" type="number" class="form-control form-control-lg rounded-3" min="1" />
+                        <span asp-validation-for="Priority" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-md-12">
+                        <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                        <textarea asp-for="Description" rows="3" class="form-control form-control-lg rounded-3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="d-flex justify-content-end mt-5">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 shadow-sm me-2" style="background-color: #0d6efd; border-color: #0d6efd;">
+                        <i class="fa-solid fa-save me-2"></i>Save Changes
+                    </button>
+                    <a asp-controller="Management" asp-action="Advertisement"
+                       class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+                        <i class="fa-solid fa-xmark me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Preview uploaded image before saving
+        document.getElementById('ImageUpload').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('PreviewImage');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '#';
+                preview.classList.add('d-none');
+            }
+        });
+    </script>
+}

@@ -14,6 +14,7 @@ namespace DNN.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<StudentPasswordRequest> StudentPasswordRequests { get; set; }
         public DbSet<Notice> Notices { get; set; }
+        public DbSet<Banner> Banners { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
