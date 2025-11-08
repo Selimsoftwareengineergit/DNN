@@ -1,19 +1,22 @@
 ﻿@using Microsoft.AspNetCore.Http
 @inject IHttpContextAccessor HttpContextAccessor
-@inject Microsoft.AspNetCore.Mvc.IUrlHelper Url 
+@inject Microsoft.AspNetCore.Mvc.IUrlHelper Url
 
 @{
-    Layout = null; 
+    Layout = null;
     ViewData["Title"] = "Student Dashboard";
-    
-    // --- 1. Retrieve User Details from Session ---
+
+    // --- Retrieve User Details from Session ---
     var userRole = HttpContextAccessor.HttpContext?.Session.GetString("UserRole") ?? "Student";
     var userFullName = HttpContextAccessor.HttpContext?.Session.GetString("UserFullName") ?? "Authenticated User";
     var profileImagePath = HttpContextAccessor.HttpContext?.Session.GetString("ProfileImagePath");
-    var userId = HttpContextAccessor.HttpContext?.Session.GetString("UserId"); 
-    
-    var defaultImagePath = "~/assets/img/profiles/default-avatar.jpg"; 
+    var userId = HttpContextAccessor.HttpContext?.Session.GetString("UserId");
+
+    var defaultImagePath = "~/assets/img/profiles/default-avatar.jpg";
     var displayImagePath = string.IsNullOrEmpty(profileImagePath) ? defaultImagePath : profileImagePath;
+
+    var notices = ViewBag.ActiveNotices as List<DNN.Models.Notice>;
+    var banners = ViewBag.ActiveBanners as List<DNN.Models.Banner>;
 }
 
 <!DOCTYPE html>
@@ -33,7 +36,6 @@
     <meta name="msapplication-TileImage" content="~/assets/img/favicons/mstile-150x150.png">
     <meta name="theme-color" content="#ffffff">
 
-
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Font Awesome -->
@@ -43,11 +45,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        .logo-img {
-            width: 80px;
-            height: 80px;
-        }
-
+        /* Profile & Header */
         .profile-avatar {
             object-fit: cover;
             aspect-ratio: 1/1;
@@ -63,29 +61,6 @@
                 box-shadow: 0 8px 15px rgba(0,0,0,0.1);
             }
 
-        .page-content-wrapper {
-            min-height: calc(100vh - 400px);
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-
-        .notice-ticker {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 0;
-            margin: 20px 0 40px 0;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .ticker-container {
-            display: inline-block;
-            white-space: nowrap;
-            padding-left: 100%;
-            animation: ticker-scroll 30s linear infinite;
-        }
-
         @@keyframes ticker-scroll {
             0% {
                 transform: translateX(0);
@@ -96,21 +71,53 @@
             }
         }
 
-        .notice-item {
-            margin-right: 30px;
+        .ticker-wrapper {
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 5px;
         }
 
-        .notice-separator {
-            margin: 0 15px;
-            color: #ffd700;
+        .ticker-content span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker-scroll 25s linear infinite;
+            color: #333;
+            font-weight: 500;
         }
 
+        /* Carousel Banner */
+        .carousel-item img {
+            transition: transform 0.5s ease-in-out;
+            object-fit: contain; /* show full image without cropping */
+            width: 100%; /* fit carousel width */
+            height: 700px; /* double height */
+            background-color: #f8f9fa; /* optional: background if image doesn't fill */
+        }
+
+            .carousel-item img:hover {
+                transform: scale(1.03);
+            }
+
+        /* Fixed Media Query */
+        @@media (max-width: 768px) {
+            .carousel-item img {
+                height: 150px;
+            }
+        }
+
+        /* Main content spacing */
+        .page-content-wrapper {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
     </style>
 </head>
 <body>
     <main class="main" id="top">
 
-        <!-- Top Bar (CUSTOM HEADER START) -->
+        <!-- =================== HEADER / NAVBAR =================== -->
         <section class="bg-primary py-2 d-none d-sm-block">
             <div class="container">
                 <div class="row align-items-center">
@@ -132,34 +139,28 @@
             </div>
         </section>
 
-        <!-- Navbar (CUSTOM HEADER - DYNAMIC PROFILE) -->
         <nav class="navbar navbar-expand-lg navbar-light sticky-top py-3" data-navbar-on-scroll="data-navbar-on-scroll">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" asp-controller="Home" asp-action="Index">
-                    <img class="logo-img" src="~/assets/img/gallery/HelloWorld.png" alt="Hello World" />
-                    <span class="ms-2 fw-bold text-dark">Hello World IT Limited</span>
+                    <img src="~/assets/img/gallery/HelloWorld.png" alt="Hello World" style="width:50px; height:auto;">
+                    <span class="ms-2 fw-semibold text-dark fs-5">Hello World IT Limited</span>
                 </a>
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto pt-2 pt-lg-0 font-base align-items-center">
-
                         <li class="nav-item d-flex align-items-center me-3">
                             <img src="@Url.Content(displayImagePath)" alt="@userFullName Profile"
                                  class="rounded-circle me-2 profile-avatar border border-primary"
-                                 style="width: 75px; height: 75px; object-fit: cover;"
+                                 style="width: 75px; height: 75px;"
                                  onerror="this.onerror=null; this.src='@Url.Content(defaultImagePath)';" />
-
                             <div>
                                 <span class="d-block fw-bold text-primary" style="font-size: 1.2rem;">@userFullName</span>
-
                                 <small class="d-block fw-semibold" style="font-size: 1rem; color: #6c63ff;">@userRole</small>
                             </div>
-
                         </li>
-
-                        @* Quick Action Buttons *@
                         <li class="nav-item px-2">
                             <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1" asp-controller="Students" asp-action="ViewProfile" asp-route-id="@userId">
                                 <i class="fas fa-user-circle me-1"></i> Profile
@@ -175,169 +176,184 @@
                                 <i class="fas fa-sign-out-alt me-1"></i> Logout
                             </a>
                         </li>
-
                     </ul>
                 </div>
             </div>
         </nav>
-        <!-- CUSTOM HEADER END -->
-
-        <!-- ------------------------------------------------ -->
-        <!-- ⭐ START: PAGE-SPECIFIC CONTENT AREA (DASHBOARD) ⭐ -->
-        <!-- ------------------------------------------------ -->
-        
+        <!-- =================== HEADER END =================== -->
+        <!-- =================== PAGE CONTENT =================== -->
         <section class="page-content-wrapper bg-light-subtle">
             <div class="container">
-                <h1 class="fw-bold mb-4 text-center text-primary">@ViewData["Title"]</h1>
-                <p class="text-center mb-5" style="color: #444; font-size: 1.05rem;">
-                    Welcome, <span class="fw-semibold text-primary">@userFullName</span>!
-                    Quick access to your academic records and essential tools.
-                </p>
 
-                <div class="notice-ticker">
-                    <div class="ticker-container">
-                        @if (ViewBag.ActiveNotices != null && ((List<DNN.Models.Notice>)ViewBag.ActiveNotices).Count > 0)
+                <!-- Notice Ticker -->
+                <div class="mb-4">
+                    <div class="ticker-wrapper">
+                        <div class="ticker-content">
+                            <span>
+                                @if (notices != null && notices.Any())
+                                {
+                                    foreach (var notice in notices)
+                                    {
+                                        @($"📢 {notice.Subject} ★★★ ")
+                                    }
+                                }
+                                else
+                                {
+                                    @("No active notices at the moment.")
+                                }
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard + Banner -->
+                <div class="row g-4">
+                    <!-- Dashboard Tiles -->
+                    <div class="col-md-8 row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-2 g-4">
+                        <div class="col">
+                            <a asp-controller="Students" asp-action="ViewProfile" asp-route-id="@userId" class="card h-100 dashboard-tile text-decoration-none">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-id-card-alt fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title fw-semibold">View Profile</h5>
+                                    <p class="card-text text-muted small">Access and update your details.</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a asp-controller="Students" asp-action="AttendanceHistory" class="card h-100 dashboard-tile text-decoration-none">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title fw-semibold">Attendance History</h5>
+                                    <p class="card-text text-muted small">Check daily and cumulative records.</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a asp-controller="Students" asp-action="PaymentHistory" class="card h-100 dashboard-tile text-decoration-none">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-money-check-alt fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title fw-semibold">Payment History</h5>
+                                    <p class="card-text text-muted small">Review payments and fee status.</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a asp-controller="Students" asp-action="Result" class="card h-100 dashboard-tile text-decoration-none">
+                                <div class="card-body text-center p-4">
+                                    <i class="fas fa-trophy fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title fw-semibold">Results</h5>
+                                    <p class="card-text text-muted small">View your final grades and reports.</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Banner Carousel Right Side -->
+                    <div class="col-md-4">
+                        @if (banners != null && banners.Any())
                         {
-                            foreach (var notice in (List<DNN.Models.Notice>)ViewBag.ActiveNotices)
-                            {
-                                <span class="notice-item">
-                                    📢 @notice.Subject
-                                    <span class="notice-separator">•</span>
-                                </span>
-                            }
-                            <!-- Repeat the content for seamless loop -->
-                            @foreach (var notice in (List<DNN.Models.Notice>)ViewBag.ActiveNotices)
-                            {
-                                <span class="notice-item">
-                                    📢 @notice.Subject
-                                    <span class="notice-separator">•</span>
-                                </span>
-                            }
+                            <div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+                                <div class="carousel-inner rounded-3 shadow-sm">
+                                    @for (int i = 0; i < banners.Count; i++)
+                                    {
+                                        var banner = banners[i];
+                                        <div class="carousel-item @(i == 0 ? "active" : "") text-center">
+                                            <a href="@banner.ClickUrl" target="@banner.Target">
+                                                <img src="@banner.ImagePath" class="d-block w-100 object-fit-cover" style="height: 700px;" alt="@banner.Title">
+
+                                            </a>
+                                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-1">
+                                                <h6 class="text-white fw-bold mb-0">@banner.CompanyName</h6>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Carousel Controls -->
+                                <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
                         }
                         else
                         {
-                            <span class="notice-item">No active notices at the moment.</span>
+                            <div class="alert alert-info text-center mb-0">
+                                No active advertisements found.
+                            </div>
                         }
                     </div>
                 </div>
 
-
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4 justify-content-center">
-                    <div class="col">
-                        <a asp-controller="Students" asp-action="ViewProfile" asp-route-id="@userId" class="card h-100 dashboard-tile text-decoration-none">
-                            <div class="card-body text-center p-4">
-                                <i class="fas fa-id-card-alt fa-3x text-info mb-3"></i>
-                                <h5 class="card-title fw-semibold">View Profile</h5>
-                                <p class="card-text text-muted small">Access and update your details.</p>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    @* Tile 2: Attendance History *@
-                    <div class="col">
-                        <a asp-controller="Students" asp-action="AttendanceHistory" class="card h-100 dashboard-tile text-decoration-none">
-                            <div class="card-body text-center p-4">
-                                <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
-                                <h5 class="card-title fw-semibold">Attendance History</h5>
-                                <p class="card-text text-muted small">Check daily and cumulative records.</p>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    @* Tile 3: Payment History (Deposit) *@
-                    <div class="col">
-                        <a asp-controller="Students" asp-action="PaymentHistory" class="card h-100 dashboard-tile text-decoration-none">
-                            <div class="card-body text-center p-4">
-                                <i class="fas fa-money-check-alt fa-3x text-warning mb-3"></i>
-                                <h5 class="card-title fw-semibold">Payment History</h5>
-                                <p class="card-text text-muted small">Review payments and fee status.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    @* Tile 4: Result *@
-                    <div class="col">
-                        <a asp-controller="Students" asp-action="Result" class="card h-100 dashboard-tile text-decoration-none">
-                            <div class="card-body text-center p-4">
-                                <i class="fas fa-trophy fa-3x text-danger mb-3"></i>
-                                <h5 class="card-title fw-semibold">Results</h5>
-                                <p class="card-text text-muted small">View your final grades and reports.</p>
-                            </div>
-                        </a>
-                    </div>
-
-                    @* Tile 5: Notice *@
-                    <div class="col">
-                        <a asp-controller="Home" asp-action="Notice" class="card h-100 dashboard-tile text-decoration-none">
-                            <div class="card-body text-center p-4">
-                                <i class="fas fa-bullhorn fa-3x text-primary mb-3"></i>
-                                <h5 class="card-title fw-semibold">Notice Board</h5>
-                                <p class="card-text text-muted small">Read official announcements.</p>
-                            </div>
-                        </a>
-                    </div>
-                    
-                </div>
             </div>
         </section>
-
-        <!-- ------------------------------------------------ -->
-        <!-- ⭐ END: PAGE-SPECIFIC CONTENT AREA ⭐ -->
-        <!-- ------------------------------------------------ -->
-
-
-        <!-- Footer (CUSTOM FOOTER START - 100% Design Match) -->
-        <section class="bg-secondary">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-6 mb-4">
-                        <a class="navbar-brand d-flex align-items-center" href="#" style="text-decoration: none;">
-                            <img src="~/assets/img/gallery/HelloWorld.png" alt="Hello World" style="width: 50px; height: auto;">
-                            <span class="ms-2 fw-semibold text-white fs-5">Hello World IT Limited</span>
-                        </a>
-                        <p class="text-light my-2"><i class="fas fa-map-marker-alt me-2"></i>35/2 Shahajalal Housing, Mohammadpur, Dhaka-1207</p>
-                        <p class="text-light"><i class="fas fa-envelope me-2"></i><a class="text-light" href="mailto:helloworlditacademy@gmail.com">helloworlditacademy@gmail.com</a></p>
-                        <p class="text-light"><i class="fas fa-phone-alt me-2"></i>+880 1930192991 (Support)</p>
-                    </div>
-                    <div class="col-lg-2 mb-3">
-                        <h5 class="text-light fw-bold mb-3">Community</h5>
-                        <ul class="list-unstyled text-light">
-                            <li><a href="#">Learners</a></li>
-                            <li><a href="#">Partners</a></li>
-                            <li><a href="#">Developers</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-2 mb-3">
-                        <h5 class="text-light fw-bold mb-3">Information</h5>
-                        <ul class="list-unstyled text-light">
-                            <li><a href="#">About</a></li>
-                            <li><a href="#">Pricing</a></li>
-                            <li><a href="#">Blog</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-lg-2 mb-3">
-                        <h5 class="text-light fw-bold mb-3">More</h5>
-                        <ul class="list-unstyled text-light">
-                            <li><a href="#">Terms</a></li>
-                            <li><a href="#">Privacy</a></li>
-                            <li><a href="#">Help</a></li>
-                        </ul>
+        <!-- =================== PAGE CONTENT END =================== -->
+        <!-- =================== FOOTER =================== -->
+        <footer class="mt-5">
+            <section class="bg-secondary py-4">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <a class="navbar-brand d-flex align-items-center" href="#" style="text-decoration: none;">
+                                <img src="~/assets/img/gallery/HelloWorld.png" alt="Hello World" style="width: 50px; height: auto;">
+                                <span class="ms-2 fw-semibold text-white fs-5">Hello World IT Limited</span>
+                            </a>
+                            <p class="text-light my-2"><i class="fas fa-map-marker-alt me-2"></i>35/2 Shahajalal Housing, Mohammadpur, Dhaka-1207</p>
+                            <p class="text-light"><i class="fas fa-envelope me-2"></i><a class="text-light" href="mailto:helloworlditacademy@gmail.com">helloworlditacademy@gmail.com</a></p>
+                            <p class="text-light"><i class="fas fa-phone-alt me-2"></i>+880 1930192991 (Support)</p>
+                        </div>
+                        <div class="col-lg-2 mb-3">
+                            <h5 class="text-light fw-bold mb-3">Community</h5>
+                            <ul class="list-unstyled text-light">
+                                <li><a href="#">Learners</a></li>
+                                <li><a href="#">Partners</a></li>
+                                <li><a href="#">Developers</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-2 mb-3">
+                            <h5 class="text-light fw-bold mb-3">Information</h5>
+                            <ul class="list-unstyled text-light">
+                                <li><a href="#">About</a></li>
+                                <li><a href="#">Pricing</a></li>
+                                <li><a href="#">Blog</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-2 mb-3">
+                            <h5 class="text-light fw-bold mb-3">More</h5>
+                            <ul class="list-unstyled text-light">
+                                <li><a href="#">Terms</a></li>
+                                <li><a href="#">Privacy</a></li>
+                                <li><a href="#">Help</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="py-2 bg-primary text-center text-white">
-            <p class="mb-0">All rights reserved &copy; Hello World IT Limited, 2025 | Made with <i class="fas fa-heart text-danger"></i> by Selim Shaikh</p>
-        </section>
-        <!-- CUSTOM FOOTER END -->
+            <section class="py-2 bg-primary text-center text-white mb-0">
+                <p class="mb-0">All rights reserved &copy; Hello World IT Limited, 2025 | Made with <i class="fas fa-heart text-danger"></i> by Selim Shaikh</p>
+            </section>
+        </footer>
+        <!-- =================== FOOTER END =================== -->
 
     </main>
 
-    <!-- Scripts (COPIED) -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="@Url.Content("~/assets/js/theme.js")"></script>
 
+    <!-- Optional JS: pause ticker on hover -->
+    <script>
+        document.querySelector(".ticker-content span")?.addEventListener("mouseover", function () {
+            this.style.animationPlayState = "paused";
+        });
+        document.querySelector(".ticker-content span")?.addEventListener("mouseout", function () {
+            this.style.animationPlayState = "running";
+        });
+    </script>
 </body>
 </html>
 

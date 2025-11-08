@@ -14,13 +14,24 @@ namespace DNN.Controllers
         }
         public IActionResult Index()
         {
+            var today = DateTime.Now;
+
+            // Load active notices (not expired)
             var activeNotices = _context.Notices
-                .Where(n => n.IsActive && (n.ExpireDate == null || n.ExpireDate > DateTime.Now))
+                .Where(n => n.IsActive && (n.ExpireDate == null || n.ExpireDate > today))
                 .OrderByDescending(n => n.EntryDate)
                 .Take(5)
                 .ToList();
 
+            // Load active banners (within date range)
+            var activeBanners = _context.Banners
+                .Where(b => b.IsActive && b.StartDate <= today && b.EndDate >= today)
+                .OrderBy(b => b.Priority)
+                .ToList();
+
+            // Pass data to View
             ViewBag.ActiveNotices = activeNotices;
+            ViewBag.ActiveBanners = activeBanners;
 
             return View();
         }
